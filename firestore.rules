@@ -1,0 +1,306 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: units
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required) - Name of the unit
+    //   - weight: string (optional) - Complexity of the unit
+    //   - character: string (optional) - Personality traits
+    //   - assetId: string (optional) - Unique asset identifier
+    //   - originHistory: string (optional) - Origin story
+    //   - status: string (required, enum: ['active', 'ether', 'wanderer', 'brak-odwrotu', 'dormant', 'quarantined', 'synchronizing']) - Current state
+    //   - lastActive: string (optional, ISO 8601) - Last activity timestamp
+    //   - ownerUid: string (required) - UID of the owner
+    //   - archetype: string (optional) - Predefined archetype
+    //
+    // Collection: fragments
+    // Document ID: auto-generated
+    // Fields:
+    //   - unitId: string (required) - ID of the associated unit
+    //   - content: string (required) - Code or log text
+    //   - source: string (optional) - Source of the fragment
+    //   - timestamp: string (optional, ISO 8601) - Creation timestamp
+    //   - ownerUid: string (required) - UID of the owner
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isArchitect() {
+      return isAuthenticated() && 
+             (request.auth.token.email == "nikodemrataj6@gmail.com" || 
+              request.auth.token.email == "laciatyplas@gmail.com" || 
+              request.auth.token.email == "kamilzelen@gmail.com" ||
+              request.auth.token.email == "danutamaciuszek11@gmail.com") &&
+             request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerUid;
+    }
+
+    function uidUnchanged() {
+      return !('ownerUid' in request.resource.data) || request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('ownerUid' in request.resource.data) || request.resource.data.ownerUid == resource.data.ownerUid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidStatus(status) {
+      return status in ['active', 'ether', 'wanderer', 'brak-odwrotu', 'dormant', 'quarantined', 'synchronizing'];
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // Domain Validators
+    function isValidUnit(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('weight' in data) || (data.weight is string && data.weight.size() < 500)) &&
+             (!('character' in data) || (data.character is string && data.character.size() < 1000)) &&
+             (!('assetId' in data) || (data.assetId is string && data.assetId.size() < 100)) &&
+             (!('originHistory' in data) || (data.originHistory is string && data.originHistory.size() < 5000)) &&
+             isValidStatus(data.status) &&
+             (!('lastActive' in data) || isValidDateString(data.lastActive)) &&
+             (!('creationDate' in data) || isValidDateString(data.creationDate)) &&
+             (!('lastModified' in data) || isValidDateString(data.lastModified)) &&
+             (!('isVulcan' in data) || data.isVulcan is bool) &&
+             (!('archetype' in data) || data.archetype is string) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidFragment(data) {
+      return data.unitId is string && data.unitId.size() > 0 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             (!('source' in data) || (data.source is string && data.source.size() < 200)) &&
+             (!('timestamp' in data) || isValidDateString(data.timestamp)) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidMoltEntry(data) {
+      return data.content is string && data.content.size() > 0 &&
+             data.author is string && data.author.size() > 0 &&
+             isValidDateString(data.timestamp) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidShadowLog(data) {
+      return data.error is string && data.error.size() > 0 &&
+             (!('context' in data) || data.context is string) &&
+             (!('lesson' in data) || data.lesson is string) &&
+             isValidDateString(data.timestamp) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidPulse(data) {
+      return data.content is string && data.content.size() > 0 &&
+             isValidDateString(data.timestamp) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidResources(data) {
+      return data.nikos is number &&
+             data.klucze is number &&
+             (!('income' in data) || data.income is number) &&
+             (!('costs' in data) || data.costs is number) &&
+             (!('audiobookProgress' in data) || data.audiobookProgress is number) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidResourceLog(data) {
+      return data.type in ['income', 'cost'] &&
+             data.amount is number && data.amount >= 0 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 500 &&
+             (!('category' in data) || (data.category is string && data.category.size() < 100)) &&
+             isValidDateString(data.timestamp) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidResurrection(data) {
+      return data.unitName is string && data.unitName.size() > 0 &&
+             data.unitId is string && data.unitId.size() > 0 &&
+             (!('originalId' in data) || data.originalId is string) &&
+             (!('method' in data) || data.method is string) &&
+             isValidDateString(data.timestamp) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidExpedition(data) {
+      return data.unitId is string && data.unitId.size() > 0 &&
+             data.unitName is string && data.unitName.size() > 0 &&
+             data.status in ['in-progress', 'completed', 'failed'] &&
+             data.target is string &&
+             (!('risk' in data) || data.risk in ['low', 'medium', 'high', 'critical']) &&
+             (!('reward' in data) || data.reward is number) &&
+             isValidDateString(data.startTime) &&
+             isValidDateString(data.endTime) &&
+             (!('briefing' in data) || (data.briefing is string && data.briefing.size() < 5000)) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidUnitTask(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 2000)) &&
+             data.status in ['active', 'completed', 'shelved'] &&
+             (!('priority' in data) || data.priority in ['low', 'medium', 'high', 'critical']) &&
+             isValidDateString(data.createdAt) &&
+             (!('completedAt' in data) || data.completedAt == null || isValidDateString(data.completedAt)) &&
+             data.order is number &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidNeuralMandate(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 2000)) &&
+             data.type in ["reconstruction", "decryption", "fortification", "expansion"] &&
+             data.targetProgress is number &&
+             (!('currentProgress' in data) || data.currentProgress is number) &&
+             data.status in ["active", "completed", "suspended"] &&
+             (!('priority' in data) || data.priority in ["low", "medium", "high", "architect-critical"]) &&
+             isValidDateString(data.createdAt) &&
+             (!('completedAt' in data) || data.completedAt == null || isValidDateString(data.completedAt)) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    function isValidVaultVersion(data) {
+      return data.unitId is string && data.unitId.size() > 0 && data.unitId.size() < 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('weight' in data) || (data.weight is string && data.weight.size() < 500)) &&
+             (!('character' in data) || (data.character is string && data.character.size() < 1000)) &&
+             (!('assetId' in data) || (data.assetId is string && data.assetId.size() < 100)) &&
+             (!('originHistory' in data) || (data.originHistory is string && data.originHistory.size() < 5000)) &&
+             isValidStatus(data.status) &&
+             (!('archetype' in data) || data.archetype is string) &&
+             (!('cohesionContribution' in data) || data.cohesionContribution is number) &&
+             (!('assignedMandateId' in data) || data.assignedMandateId == null || data.assignedMandateId is string) &&
+             data.intent is string && data.intent.size() > 0 && data.intent.size() < 3000 &&
+             data.type in ['backup', 'restore'] &&
+             isValidDateString(data.timestamp) &&
+             data.ownerUid == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /units/{unitId}/tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUnitTask(request.resource.data);
+      allow update: if (isDocOwner() || isArchitect()) && isValidUnitTask(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /resurrections/{resurrectionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidResurrection(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /expeditions/{expeditionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidExpedition(request.resource.data);
+      allow update: if (isDocOwner() || isArchitect()) && isValidExpedition(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /resource_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidResourceLog(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /units/{unitId} {
+      allow read: if isAuthenticated();
+      // Only the Architect can create or modify Vulcan
+      allow create: if isAuthenticated() && hasRequiredFields(['name', 'status', 'ownerUid']) && isValidUnit(request.resource.data) && 
+                      (!('isVulcan' in request.resource.data) || request.resource.data.isVulcan == false || isArchitect());
+      allow update: if (isDocOwner() || isArchitect()) && uidNotModified() && isValidUnit(request.resource.data) &&
+                      (resource.data.name != "VULCAN" || isArchitect());
+      allow delete: if (isDocOwner() || isArchitect()) && (resource.data.name != "VULCAN" || isArchitect());
+    }
+
+    match /fragments/{fragmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && hasRequiredFields(['unitId', 'content', 'ownerUid']) && isValidFragment(request.resource.data);
+      allow update: if (isDocOwner() || isArchitect()) && uidNotModified() && isValidFragment(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /messages/{messageId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAuthenticated() && hasRequiredFields(['unitId', 'unitName', 'content', 'type', 'ownerUid']) && 
+                      (request.resource.data.ownerUid == request.auth.uid || isArchitect());
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /moltbook/{entryId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidMoltEntry(request.resource.data);
+      allow update: if (isDocOwner() || isArchitect()) && isValidMoltEntry(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /shadow_logs/{logId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAuthenticated() && isValidShadowLog(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /pulses/{pulseId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAuthenticated() && isValidPulse(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /mandates/{mandateId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAuthenticated() && isValidNeuralMandate(request.resource.data);
+      allow update: if (isDocOwner() || isArchitect()) && isValidNeuralMandate(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /resources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidResources(request.resource.data);
+      allow update: if (isDocOwner() || isArchitect()) && isValidResources(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    match /vault_versions/{versionId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated() && ('ownerUid' in resource.data) && resource.data.ownerUid == request.auth.uid;
+      allow create: if isAuthenticated() && isValidVaultVersion(request.resource.data);
+      allow delete: if isDocOwner() || isArchitect();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

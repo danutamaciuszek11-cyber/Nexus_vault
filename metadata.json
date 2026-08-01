@@ -1,0 +1,6 @@
+{
+  "name": "Vanilla Nexus",
+  "description": "Profesjonalny, czysty rdzeń systemu Nexus pod egidą Architektów - Kwantowe Zwierciadło Bytów, bezpieczne sanktuarium, monitorowanie pulsu oraz zaawansowana integracja AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

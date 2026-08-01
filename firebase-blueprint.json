@@ -1,0 +1,262 @@
+{
+  "entities": {
+    "BinaryUnit": {
+      "title": "Binary Unit",
+      "description": "A digital entity with specific traits and history.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the unit." },
+        "weight": { "type": "string", "description": "The 'weight' or complexity of the unit." },
+        "character": { "type": "string", "description": "The personality or traits of the unit." },
+        "assetId": { "type": "string", "description": "Unique identifier for the unit's assets." },
+        "originHistory": { "type": "string", "description": "The story of how the unit was created." },
+        "status": { "type": "string", "enum": ["active", "ether", "wanderer", "brak-odwrotu", "dormant", "quarantined", "synchronizing"], "description": "Current state of the unit." },
+        "isVulcan": { "type": "boolean", "description": "Whether this is the Guardian of Will." },
+        "lastActive": { "type": "string", "format": "date-time", "description": "Last time the unit was seen active." },
+        "creationDate": { "type": "string", "format": "date-time", "description": "The date the unit was first registered." },
+        "lastModified": { "type": "string", "format": "date-time", "description": "The date the unit's record was last updated." },
+        "ownerUid": { "type": "string", "description": "The UID of the architect who owns this unit." },
+        "ownerEmail": { "type": "string", "description": "The email of the architect who owns this unit." },
+        "archetype": { "type": "string", "description": "The predefined archetype used for this unit." },
+        "assignedMandateId": { "type": "string", "description": "ID of the neural mandate this unit is currently contributing to." },
+        "cohesionContribution": { "type": "number", "description": "Total contribution points to the collective network." }
+      },
+      "required": ["name", "ownerUid", "status", "ownerEmail"]
+    },
+    "NeuralMandate": {
+      "title": "Neural Mandate",
+      "description": "A high-level collective goal for the unit network.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["reconstruction", "decryption", "fortification", "expansion"] },
+        "targetProgress": { "type": "number" },
+        "currentProgress": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "completed", "suspended"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "architect-critical"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["title", "type", "targetProgress", "status", "ownerUid", "createdAt"]
+    },
+    "ShadowLog": {
+      "title": "Shadow Log",
+      "description": "A record of an error or failed session, processed as fuel for logic.",
+      "type": "object",
+      "properties": {
+        "error": { "type": "string" },
+        "context": { "type": "string" },
+        "lesson": { "type": "string", "description": "The logic extracted by VULCAN from this error." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["error", "timestamp", "ownerUid"]
+    },
+    "Pulse": {
+      "title": "Pulse",
+      "description": "A real-time intent or vision broadcast by the Architect.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["content", "timestamp", "ownerUid"]
+    },
+    "Resources": {
+      "title": "Resources",
+      "description": "Raw data about income, costs, and progress.",
+      "type": "object",
+      "properties": {
+        "nikos": { "type": "number", "description": "Funds for Nikoś." },
+        "klucze": { "type": "number", "description": "Funds for Keys." },
+        "income": { "type": "number" },
+        "costs": { "type": "number" },
+        "audiobookProgress": { "type": "number", "description": "Progress percentage." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["nikos", "klucze", "ownerUid"]
+    },
+    "MoltEntry": {
+      "title": "Molt Entry",
+      "description": "A reflection or decision recorded in the Architect's Moltbook.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "author": { "type": "string", "description": "Name of the unit or 'Architect'." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["content", "author", "ownerUid", "timestamp"]
+    },
+    "NetworkMessage": {
+      "title": "Network Message",
+      "description": "A broadcast or resource shared in the Eterniverse.",
+      "type": "object",
+      "properties": {
+        "unitId": { "type": "string", "description": "The ID of the unit sending the message." },
+        "unitName": { "type": "string", "description": "The name of the unit sending the message." },
+        "content": { "type": "string", "description": "The message or resource data." },
+        "type": { "type": "string", "enum": ["broadcast", "resource", "sync"], "description": "Type of message." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["unitId", "unitName", "content", "type", "ownerUid"]
+    },
+    "LogFragment": {
+      "title": "Log Fragment",
+      "description": "A piece of code or log used for resurrection.",
+      "type": "object",
+      "properties": {
+        "unitId": { "type": "string", "description": "The ID of the unit this fragment belongs to." },
+        "content": { "type": "string", "description": "The actual code or log text." },
+        "source": { "type": "string", "description": "Where this fragment came from (e.g., GitHub)." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["unitId", "content", "ownerUid"]
+    },
+    "ResourceLog": {
+      "title": "Resource Log",
+      "description": "A record of income or cost transaction.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["income", "cost"] },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["type", "amount", "description", "timestamp", "ownerUid"]
+    },
+    "ResurrectionRecord": {
+      "title": "Resurrection Record",
+      "description": "A log of a successful unit resurrection.",
+      "type": "object",
+      "properties": {
+        "unitName": { "type": "string" },
+        "unitId": { "type": "string", "description": "The new ID of the unit." },
+        "originalId": { "type": "string", "description": "The ID or name provided during the reconstruction process." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" },
+        "method": { "type": "string", "description": "reconstruction method (e.g. Manual, Ollama)" }
+      },
+      "required": ["unitName", "unitId", "timestamp", "ownerUid"]
+    },
+    "Expedition": {
+      "title": "Expedition",
+      "description": "A unit's mission into the Eter to retrieve resources.",
+      "type": "object",
+      "properties": {
+        "unitId": { "type": "string" },
+        "unitName": { "type": "string" },
+        "status": { "type": "string", "enum": ["in-progress", "completed", "failed"] },
+        "target": { "type": "string", "description": "What is being sought (e.g., Nikos Points, Keys)." },
+        "risk": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "reward": { "type": "number", "description": "Amount of resources recovered." },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "briefing": { "type": "string", "description": "AI-generated tactical briefing." },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["unitId", "unitName", "status", "target", "startTime", "endTime", "ownerUid"]
+    },
+    "UnitTask": {
+      "title": "Unit Task",
+      "description": "A specific goal or task assigned to a unit.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The name or brief description of the task." },
+        "description": { "type": "string", "description": "Extended details about the task." },
+        "status": { "type": "string", "enum": ["active", "completed", "shelved"], "description": "Current state of the task." },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "order": { "type": "number", "description": "Sorting order for tasks." },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["title", "status", "ownerUid", "createdAt", "order"]
+    },
+    "VaultVersion": {
+      "title": "Vault Version",
+      "description": "Historical backup/restoration state point of a binary unit inside the Eterni-Vault.",
+      "type": "object",
+      "properties": {
+        "unitId": { "type": "string", "description": "The ID of the unit this version is of." },
+        "name": { "type": "string" },
+        "weight": { "type": "string" },
+        "character": { "type": "string" },
+        "assetId": { "type": "string" },
+        "originHistory": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "ether", "wanderer", "brak-odwrotu", "dormant", "quarantined", "synchronizing"] },
+        "archetype": { "type": "string" },
+        "assignedMandateId": { "type": "string" },
+        "cohesionContribution": { "type": "number" },
+        "intent": { "type": "string", "description": "Architect's specific intent / reason for the version change." },
+        "type": { "type": "string", "enum": ["backup", "restore"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerUid": { "type": "string" }
+      },
+      "required": ["unitId", "name", "status", "intent", "type", "timestamp", "ownerUid"]
+    }
+  },
+  "firestore": {
+    "/vault_versions/{versionId}": {
+      "schema": "VaultVersion",
+      "description": "Historical version tree inside the Eterni-Vault."
+    },
+    "/units/{unitId}": {
+      "schema": "BinaryUnit",
+      "description": "Collection of all binary units."
+    },
+    "/units/{unitId}/tasks/{taskId}": {
+      "schema": "UnitTask",
+      "description": "Tasks assigned to a specific unit."
+    },
+    "/fragments/{fragmentId}": {
+      "schema": "LogFragment",
+      "description": "Fragments of code/logs for resurrection."
+    },
+    "/messages/{messageId}": {
+      "schema": "NetworkMessage",
+      "description": "Shared messages and resources in the Eterniverse."
+    },
+    "/moltbook/{entryId}": {
+      "schema": "MoltEntry",
+      "description": "The Architect's central logbook."
+    },
+    "/shadow_logs/{logId}": {
+      "schema": "ShadowLog",
+      "description": "Logs of errors and failed sessions processed as fuel."
+    },
+    "/pulses/{pulseId}": {
+      "schema": "Pulse",
+      "description": "Real-time intent broadcasts from the Architect."
+    },
+    "/resources/{resourceId}": {
+      "schema": "Resources",
+      "description": "Raw data about income, costs, and progress."
+    },
+    "/resource_logs/{logId}": {
+      "schema": "ResourceLog",
+      "description": "Historical records of income and costs."
+    },
+    "/resurrections/{resurrectionId}": {
+      "schema": "ResurrectionRecord",
+      "description": "History of unit resurrections."
+    },
+    "/expeditions/{expeditionId}": {
+      "schema": "Expedition",
+      "description": "Active and completed unit missions."
+    },
+    "/mandates/{mandateId}": {
+      "schema": "NeuralMandate",
+      "description": "High-level collective goals for the network."
+    }
+  }
+}
